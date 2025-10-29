@@ -4,10 +4,9 @@ Submit every non-error route in your Next.js build to [IndexNow](https://www.ind
 
 ## Why nextjs-indexing-pack
 
-- **Purpose-built for Next.js** – understands the `.next` build output structure so you can skip writing bespoke crawlers.
-- **One command, multiple destinations** – notify IndexNow-compatible engines and the Google Indexing API in the same workflow.
-- **Zero-guess setup** – the interactive wizard scaffolds keys, config files, and optional Google credentials for you.
-- **CI friendly** – works anywhere Node.js runs and honours environment variables and config files.
+Don't rely on Google and other search engines randomly stumbling upon your latest product launch, seasonal landing page, or blog update. nextjs-indexing-pack gives you proactive control over how quickly fresh URLs reach the crawlers, so you can turn marketing campaigns, news announcements, or inventory updates into real traffic while they are still timely.
+
+Inspired by the proven results of the [Rank Math Instant Indexing](https://rankmath.com/blog/google-indexing-api/) approach, this package tailors that playbook for modern Next.js stacks. Business owners get a single, reliable workflow that respects their CI/CD process, pairs perfectly with the framework's build output, and keeps their brand visible across IndexNow partners and the Google Indexing API without waiting for chance discovery.
 
 ## Table of contents
 
@@ -98,6 +97,22 @@ Once you are set up, trigger submissions directly from your build or deployment 
 ```bash
 npx nextjs-indexing-pack
 ```
+
+#### Configuration
+
+The CLI stores persistent settings in `nextjs-indexing-pack.config.json` at the project root. The file follows this shape:
+
+```json
+{
+  "baseUrl": "https://your-production-domain.com",
+  "googleServiceAccountPath": "./credentials/google-service-account.json"
+}
+```
+
+- `baseUrl` – the origin that the CLI prefixes to every discovered route when it assembles the submission payload. Update this value when promoting builds between staging and production or when sending URLs for alternate domains.
+- `googleServiceAccountPath` (optional) – path to a Google service account JSON file if you also submit to the Google Indexing API. The wizard only adds this when you opt into Google support.
+
+If the file is missing or you need to regenerate it, run `npx nextjs-indexing-pack init` to recreate it from the interactive wizard, or delete and rerun the command to start fresh. Manual edits are safe when you need different values for specific deployment environments (for example, custom staging hosts in CI). During a submission run, the CLI first loads `nextjs-indexing-pack.config.json` and falls back to CLI flags or environment variables when fields are absent, so changes are picked up automatically on the next execution.
 
 Optional flags:
 
