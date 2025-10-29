@@ -5,6 +5,7 @@ export const CONFIG_FILENAME = 'nextjs-indexing-pack.config.json';
 
 export interface NextjsIndexingPackConfig {
   baseUrl?: string;
+  googleServiceAccountPath?: string;
 }
 
 export function getConfigPath(): string {
@@ -24,6 +25,11 @@ export async function loadConfig(): Promise<NextjsIndexingPackConfig | undefined
       config.baseUrl = parsed.baseUrl;
     } else if (parsed.baseUrl !== undefined) {
       console.warn('Ignoring invalid "baseUrl" in nextjs-indexing-pack config (expected a string).');
+    }
+    if (typeof parsed.googleServiceAccountPath === 'string') {
+      config.googleServiceAccountPath = parsed.googleServiceAccountPath;
+    } else if (parsed.googleServiceAccountPath !== undefined) {
+      console.warn('Ignoring invalid "googleServiceAccountPath" in nextjs-indexing-pack config (expected a string).');
     }
     return config;
   } catch (error: any) {
