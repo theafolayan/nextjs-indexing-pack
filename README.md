@@ -26,7 +26,30 @@ Refer to the official [IndexNow documentation](https://www.indexnow.org/document
 
 ## Usage
 
-Create a small script (for example in `scripts/submit-indexnow.ts`) and run it after `next build` finishes.
+### CLI (recommended)
+
+The package now ships with a CLI so you can trigger submissions directly from your build or deployment pipeline:
+
+```bash
+npx nextjs-indexing-pack --base-url "https://your-domain.com" --key "$INDEXNOW_KEY"
+```
+
+Optional flags:
+
+- `--next-build-dir <dir>` – override the location of your Next.js build output (defaults to `.next`).
+- `--dry-run` – collect URLs without notifying any endpoints.
+
+For example, run a dry run to inspect the URLs that will be submitted:
+
+```bash
+npx nextjs-indexing-pack --base-url "https://your-domain.com" --key "$INDEXNOW_KEY" --dry-run
+```
+
+Tip: wire it into your pipeline after `next build` finishes, for example `"postbuild": "npx nextjs-indexing-pack --base-url https://your-domain.com --key $INDEXNOW_KEY"`.
+
+### Using the TypeScript API
+
+Prefer to keep using the library? Create a small script (for example in `scripts/submit-indexnow.ts`) and run it after `next build` finishes.
 
 ```ts
 import { submitToIndexNow } from 'nextjs-indexing-pack';
