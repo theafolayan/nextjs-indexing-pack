@@ -49,6 +49,10 @@ export interface SubmitToIndexNowOptions {
    * When true, URLs are collected but not submitted. Useful for testing locally.
    */
   dryRun?: boolean;
+  /**
+   * Optional explicit list of URLs to submit instead of discovering them from the Next.js build output.
+   */
+  urls?: string[];
 }
 
 export interface SubmitToIndexNowResult {
@@ -141,7 +145,16 @@ export async function collectIndexableRoutes(nextBuildDir = '.next'): Promise<st
 }
 
 export async function submitToIndexNow(options: SubmitToIndexNowOptions): Promise<SubmitToIndexNowResult> {
-  const { baseUrl, nextBuildDir = '.next', key, keyLocation, endpoints = DEFAULT_ENDPOINTS, urlFilter, dryRun } = options;
+  const {
+    baseUrl,
+    nextBuildDir = '.next',
+    key,
+    keyLocation,
+    endpoints = DEFAULT_ENDPOINTS,
+    urlFilter,
+    dryRun,
+    urls: explicitUrls,
+  } = options;
 
   if (!baseUrl) {
     throw new Error('`baseUrl` must be provided.');
@@ -159,10 +172,34 @@ export async function submitToIndexNow(options: SubmitToIndexNowOptions): Promis
   const pathname = url.pathname.endsWith('/') && url.pathname !== '/' ? url.pathname.slice(0, -1) : url.pathname;
   const normalizedBase = `${url.origin}${pathname === '/' ? '' : pathname}`;
 
-  const routes = await collectIndexableRoutes(nextBuildDir);
-  const urls = routes
-    .map((route) => (route === '/' ? normalizedBase : `${normalizedBase}${route}`))
-    .filter((routeUrl) => (urlFilter ? urlFilter(routeUrl) : true));
+  let urls: string[];
+  if (explicitUrls?.length) {
+    const seen = new Set<string>();
+    urls = [];
+    for (const urlToSubmit of explicitUrls) {
+      if (!urlToSubmit) continue;
+      let parsed: URL;
+      try {
+        parsed = new URL(urlToSubmit);
+      } catch {
+        throw new Error(`Invalid URL provided to submitToIndexNow: ${urlToSubmit}`);
+      }
+      const normalizedUrl = parsed.toString();
+      if (urlFilter && !urlFilter(normalizedUrl)) {
+        continue;
+      }
+      if (seen.has(normalizedUrl)) {
+        continue;
+      }
+      seen.add(normalizedUrl);
+      urls.push(normalizedUrl);
+    }
+  } else {
+    const routes = await collectIndexableRoutes(nextBuildDir);
+    urls = routes
+      .map((route) => (route === '/' ? normalizedBase : `${normalizedBase}${route}`))
+      .filter((routeUrl) => (urlFilter ? urlFilter(routeUrl) : true));
+  }
 
   const submission: SubmitToIndexNowResult = {
     urls,

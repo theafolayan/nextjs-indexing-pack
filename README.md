@@ -98,6 +98,14 @@ Once you are set up, trigger submissions directly from your build or deployment 
 npx nextjs-indexing-pack
 ```
 
+Need to push a short list of specific URLs without waiting for a new build? Use the explicit `submit` command and pass a comma-separated list:
+
+```bash
+npx nextjs-indexing-pack submit -u https://example.com/new-page,https://example.com/updated-offer -g
+```
+
+The example above targets only the Google Indexing API (`-g`). Omit both `-g` and `-i` to notify IndexNow partners and Google together, or pass `-i` when you only want IndexNow-compatible endpoints.
+
 #### Configuration
 
 The CLI stores persistent settings in `nextjs-indexing-pack.config.json` at the project root. The file follows this shape:
@@ -116,6 +124,9 @@ If the file is missing or you need to regenerate it, run `npx nextjs-indexing-pa
 
 Optional flags:
 
+- `-u, --urls <list>` – provide a comma-separated set of fully qualified URLs to submit manually instead of discovering them from the Next.js build.
+- `-g, --google` – limit the run to the Google Indexing API (default is both IndexNow and Google).
+- `-i, --indexnow` – limit the run to IndexNow-compatible endpoints (default is both IndexNow and Google).
 - `--base-url <url>` – override the base URL stored in `nextjs-indexing-pack.config.json`.
 - `--next-build-dir <dir>` – override the location of your Next.js build output (defaults to `.next`).
 - `--dry-run` – collect URLs without notifying any endpoints.
