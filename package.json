@@ -4,6 +4,9 @@
   "description": "Submit Next.js URLs to IndexNow-compatible search engines",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "nextjs-indexing-pack": "dist/cli.js"
+  },
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build",
