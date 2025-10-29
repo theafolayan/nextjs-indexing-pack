@@ -150,7 +150,12 @@ export async function submitToIndexNow(options: SubmitToIndexNowOptions): Promis
     throw new Error('`key` must be provided.');
   }
 
-  const url = new URL(baseUrl);
+  let url: URL;
+  try {
+    url = new URL(baseUrl);
+  } catch {
+    throw new Error(`\`baseUrl\` must be a fully qualified URL (for example, https://example.com). Received: ${baseUrl}`);
+  }
   const pathname = url.pathname.endsWith('/') && url.pathname !== '/' ? url.pathname.slice(0, -1) : url.pathname;
   const normalizedBase = `${url.origin}${pathname === '/' ? '' : pathname}`;
 
