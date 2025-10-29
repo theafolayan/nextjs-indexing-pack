@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { submitToIndexNow } from './indexnow';
+import { runInit } from './init';
 
 interface CliOptions {
   baseUrl?: string;
@@ -9,7 +10,10 @@ interface CliOptions {
 }
 
 function printUsage(): void {
-  console.log(`Usage: nextjs-indexing-pack --base-url <url> --key <key> [options]\n\n` +
+  console.log(`Usage: nextjs-indexing-pack [command] [options]\n\n` +
+    `Commands:\n` +
+    `  init                   Interactive wizard that prepares your project for IndexNow.\n` +
+    `  (default)              Submit URLs immediately using the flags below.\n\n` +
     `Options:\n` +
     `  --base-url <url>        Fully qualified origin of your deployed Next.js site.\n` +
     `  --key <key>             IndexNow key value (must match the hosted key file).\n` +
@@ -56,7 +60,18 @@ function parseArgs(argv: string[]): CliOptions {
 
 async function main(): Promise<void> {
   try {
-    const options = parseArgs(process.argv.slice(2));
+    const argv = process.argv.slice(2);
+
+    if (argv[0] === 'init') {
+      if (argv.includes('--help')) {
+        printUsage();
+        return;
+      }
+      await runInit();
+      return;
+    }
+
+    const options = parseArgs(argv);
     const { baseUrl, key, nextBuildDir, dryRun } = options;
 
     if (!baseUrl) {

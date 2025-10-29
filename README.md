@@ -28,7 +28,15 @@ Refer to the official [IndexNow documentation](https://www.indexnow.org/document
 
 ### CLI (recommended)
 
-The package now ships with a CLI so you can trigger submissions directly from your build or deployment pipeline:
+Kick off your integration with the interactive init wizard:
+
+```bash
+npx nextjs-indexing-pack init
+```
+
+The wizard asks for your production URL, generates a compliant IndexNow key, creates the required `public/<key>.txt` file, and (optionally) stores the key in `.env.local`.
+
+Once you are set up, trigger submissions directly from your build or deployment pipeline:
 
 ```bash
 npx nextjs-indexing-pack --base-url "https://your-domain.com" --key "$INDEXNOW_KEY"
