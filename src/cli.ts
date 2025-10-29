@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import { submitToIndexNow } from './indexnow';
+import { runInit } from './init';
+import { loadConfig } from './config';
 
 interface CliOptions {
   baseUrl?: string;
@@ -9,10 +11,13 @@ interface CliOptions {
 }
 
 function printUsage(): void {
-  console.log(`Usage: nextjs-indexing-pack --base-url <url> --key <key> [options]\n\n` +
+  console.log(`Usage: nextjs-indexing-pack [command] [options]\n\n` +
+    `Commands:\n` +
+    `  init                   Interactive wizard that prepares your project for IndexNow.\n` +
+    `  (default)              Submit URLs immediately using the flags below.\n\n` +
     `Options:\n` +
-    `  --base-url <url>        Fully qualified origin of your deployed Next.js site.\n` +
-    `  --key <key>             IndexNow key value (must match the hosted key file).\n` +
+    `  --base-url <url>        Fully qualified origin of your deployed Next.js site (defaults to config).\n` +
+    `  --key <key>             IndexNow key value (defaults to INDEXNOW_KEY env var).\n` +
     `  --next-build-dir <dir>  Location of the Next.js build output (defaults to .next).\n` +
     `  --dry-run               Collect URLs without submitting them to IndexNow.\n` +
     `  --help                  Show this message.\n`);
@@ -56,14 +61,28 @@ function parseArgs(argv: string[]): CliOptions {
 
 async function main(): Promise<void> {
   try {
-    const options = parseArgs(process.argv.slice(2));
-    const { baseUrl, key, nextBuildDir, dryRun } = options;
+    const argv = process.argv.slice(2);
+
+    if (argv[0] === 'init') {
+      if (argv.includes('--help')) {
+        printUsage();
+        return;
+      }
+      await runInit();
+      return;
+    }
+
+    const config = await loadConfig();
+    const options = parseArgs(argv);
+    const { nextBuildDir, dryRun } = options;
+    const baseUrl = options.baseUrl ?? config?.baseUrl;
+    const key = options.key ?? process.env.INDEXNOW_KEY;
 
     if (!baseUrl) {
-      throw new Error('Missing required flag: --base-url');
+      throw new Error('Missing base URL. Pass --base-url <url> or run "npx nextjs-indexing-pack init" to create a config file.');
     }
     if (!key) {
-      throw new Error('Missing required flag: --key');
+      throw new Error('Missing IndexNow key. Pass --key <value> or set INDEXNOW_KEY in your environment.');
     }
 
     const result = await submitToIndexNow({

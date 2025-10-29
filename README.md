@@ -28,24 +28,35 @@ Refer to the official [IndexNow documentation](https://www.indexnow.org/document
 
 ### CLI (recommended)
 
-The package now ships with a CLI so you can trigger submissions directly from your build or deployment pipeline:
+Kick off your integration with the interactive init wizard:
 
 ```bash
-npx nextjs-indexing-pack --base-url "https://your-domain.com" --key "$INDEXNOW_KEY"
+npx nextjs-indexing-pack init
+```
+
+The wizard asks for your production URL, generates a compliant IndexNow key, creates the required `public/<key>.txt` file, writes `nextjs-indexing-pack.config.json`, and (optionally) stores the key in `.env.local`.
+
+Once you are set up, trigger submissions directly from your build or deployment pipeline:
+
+```bash
+npx nextjs-indexing-pack
 ```
 
 Optional flags:
 
+- `--base-url <url>` – override the base URL stored in `nextjs-indexing-pack.config.json`.
 - `--next-build-dir <dir>` – override the location of your Next.js build output (defaults to `.next`).
 - `--dry-run` – collect URLs without notifying any endpoints.
+
+If you do not pass `--key`, the CLI will automatically fall back to the `INDEXNOW_KEY` environment variable.
 
 For example, run a dry run to inspect the URLs that will be submitted:
 
 ```bash
-npx nextjs-indexing-pack --base-url "https://your-domain.com" --key "$INDEXNOW_KEY" --dry-run
+npx nextjs-indexing-pack --dry-run
 ```
 
-Tip: wire it into your pipeline after `next build` finishes, for example `"postbuild": "npx nextjs-indexing-pack --base-url https://your-domain.com --key $INDEXNOW_KEY"`.
+Tip: wire it into your pipeline after `next build` finishes, for example `"postbuild": "INDEXNOW_KEY=$INDEXNOW_KEY npx nextjs-indexing-pack"`.
 
 ### Using the TypeScript API
 
