@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { submitToIndexNow } from './indexnow';
 import { runInit } from './init';
+import { loadConfig } from './config';
 
 interface CliOptions {
   baseUrl?: string;
@@ -15,7 +16,7 @@ function printUsage(): void {
     `  init                   Interactive wizard that prepares your project for IndexNow.\n` +
     `  (default)              Submit URLs immediately using the flags below.\n\n` +
     `Options:\n` +
-    `  --base-url <url>        Fully qualified origin of your deployed Next.js site.\n` +
+    `  --base-url <url>        Fully qualified origin of your deployed Next.js site (defaults to config).\n` +
     `  --key <key>             IndexNow key value (defaults to INDEXNOW_KEY env var).\n` +
     `  --next-build-dir <dir>  Location of the Next.js build output (defaults to .next).\n` +
     `  --dry-run               Collect URLs without submitting them to IndexNow.\n` +
@@ -71,12 +72,14 @@ async function main(): Promise<void> {
       return;
     }
 
+    const config = await loadConfig();
     const options = parseArgs(argv);
-    const { baseUrl, nextBuildDir, dryRun } = options;
+    const { nextBuildDir, dryRun } = options;
+    const baseUrl = options.baseUrl ?? config?.baseUrl;
     const key = options.key ?? process.env.INDEXNOW_KEY;
 
     if (!baseUrl) {
-      throw new Error('Missing required flag: --base-url');
+      throw new Error('Missing base URL. Pass --base-url <url> or run "npx nextjs-indexing-pack init" to create a config file.');
     }
     if (!key) {
       throw new Error('Missing IndexNow key. Pass --key <value> or set INDEXNOW_KEY in your environment.');

@@ -3,6 +3,7 @@ import { stdin as input, stdout as output } from 'node:process';
 import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
+import { CONFIG_FILENAME, saveConfig } from './config';
 
 function generateIndexNowKey(): string {
   // 16 random bytes yields a 32 character hex string which satisfies IndexNow requirements (8-128 chars).
@@ -92,6 +93,8 @@ export async function runInit(): Promise<void> {
     const key = generateIndexNowKey();
     const keyFilePath = await writeKeyFile(publicDir, key);
 
+    const configStatus = await saveConfig({ baseUrl });
+
     const shouldUpdateEnv = await confirm(rl, 'Would you like to store the key in .env.local?', true);
     let envStatus: 'created' | 'updated' | 'skipped' | 'declined' = 'declined';
     if (shouldUpdateEnv) {
@@ -102,6 +105,11 @@ export async function runInit(): Promise<void> {
     console.log(`• Base URL: ${baseUrl}`);
     console.log(`• Generated IndexNow key: ${key}`);
     console.log(`• Key file created at: ${keyFilePath}`);
+    if (configStatus === 'created') {
+      console.log(`• Created ${CONFIG_FILENAME} with your base URL.`);
+    } else {
+      console.log(`• Updated ${CONFIG_FILENAME} with your base URL.`);
+    }
     if (shouldUpdateEnv) {
       if (envStatus === 'created') {
         console.log('• Created .env.local with INDEXNOW_KEY.');
@@ -116,8 +124,8 @@ export async function runInit(): Promise<void> {
 
     console.log('\nNext steps:');
     console.log(`1. Ensure ".env.local" (or your secrets store) exposes INDEXNOW_KEY=${key} to your CI/deployment environment.`);
-    console.log(`2. After "next build", run: npx nextjs-indexing-pack --base-url "${baseUrl}"`);
-    console.log('   (The CLI reads INDEXNOW_KEY from your environment when --key is not provided).');
+    console.log('2. After "next build", run: npx nextjs-indexing-pack');
+    console.log('   (The CLI reads INDEXNOW_KEY from your environment and your base URL from the config file).');
     console.log(`3. Deploy ${path.relative(process.cwd(), keyFilePath) || `${key}.txt`} so it is publicly accessible at ${baseUrl}/${key}.txt.`);
   } finally {
     rl.close();
