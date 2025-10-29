@@ -1,7 +1,7 @@
 {
   "name": "nextjs-indexing-pack",
-  "version": "0.1.0",
-  "description": "Submit Next.js URLs to IndexNow-compatible search engines",
+  "version": "0.1.2",
+  "description": "Submit your nextjs website routes / URLs to Google and IndexNow-compatible search engines",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
@@ -20,7 +20,7 @@
     "bing",
     "yandex"
   ],
-  "author": "",
+  "author": "theafolayan",
   "license": "MIT",
   "peerDependencies": {
     "next": ">=12.0.0",
