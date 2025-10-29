@@ -16,7 +16,7 @@ function printUsage(): void {
     `  (default)              Submit URLs immediately using the flags below.\n\n` +
     `Options:\n` +
     `  --base-url <url>        Fully qualified origin of your deployed Next.js site.\n` +
-    `  --key <key>             IndexNow key value (must match the hosted key file).\n` +
+    `  --key <key>             IndexNow key value (defaults to INDEXNOW_KEY env var).\n` +
     `  --next-build-dir <dir>  Location of the Next.js build output (defaults to .next).\n` +
     `  --dry-run               Collect URLs without submitting them to IndexNow.\n` +
     `  --help                  Show this message.\n`);
@@ -72,13 +72,14 @@ async function main(): Promise<void> {
     }
 
     const options = parseArgs(argv);
-    const { baseUrl, key, nextBuildDir, dryRun } = options;
+    const { baseUrl, nextBuildDir, dryRun } = options;
+    const key = options.key ?? process.env.INDEXNOW_KEY;
 
     if (!baseUrl) {
       throw new Error('Missing required flag: --base-url');
     }
     if (!key) {
-      throw new Error('Missing required flag: --key');
+      throw new Error('Missing IndexNow key. Pass --key <value> or set INDEXNOW_KEY in your environment.');
     }
 
     const result = await submitToIndexNow({

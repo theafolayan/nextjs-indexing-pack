@@ -116,8 +116,8 @@ export async function runInit(): Promise<void> {
 
     console.log('\nNext steps:');
     console.log(`1. Ensure ".env.local" (or your secrets store) exposes INDEXNOW_KEY=${key} to your CI/deployment environment.`);
-    console.log(`2. After "next build", run: npx nextjs-indexing-pack --base-url "${baseUrl}" --key "$INDEXNOW_KEY"`);
-    console.log('   (You can add this as a postbuild script in package.json).');
+    console.log(`2. After "next build", run: npx nextjs-indexing-pack --base-url "${baseUrl}"`);
+    console.log('   (The CLI reads INDEXNOW_KEY from your environment when --key is not provided).');
     console.log(`3. Deploy ${path.relative(process.cwd(), keyFilePath) || `${key}.txt`} so it is publicly accessible at ${baseUrl}/${key}.txt.`);
   } finally {
     rl.close();
