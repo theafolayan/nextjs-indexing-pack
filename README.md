@@ -1,14 +1,12 @@
 # nextjs-indexing-pack
 
-A lightweight utility package for managing SEO metadata and search engine indexing in Next.js applications.
+Submit every non-error route in your Next.js build to [IndexNow](https://www.indexnow.org/) and the search engines that support it.
 
-## Features
+## What it does
 
-- 🚀 Easy-to-use API for generating SEO metadata
-- 📝 TypeScript support with full type definitions
-- ⚡ Lightweight with zero dependencies
-- 🎯 Designed specifically for Next.js 12+ (App Router compatible)
-- 🔍 Control over search engine indexing and crawling
+- 📄 Reads your Next.js build output and compiles a clean list of public URLs (excluding 404/error utilities).
+- 🚀 Sends the URLs to IndexNow-compatible endpoints (IndexNow, Bing, Yandex, Naver) with one call.
+- 🧪 Supports dry-run mode so you can verify which URLs will be submitted before notifying search engines.
 
 ## Installation
 
@@ -16,130 +14,101 @@ A lightweight utility package for managing SEO metadata and search engine indexi
 npm install nextjs-indexing-pack
 ```
 
-or with yarn:
+The package ships as plain TypeScript utilities so it can be wired into any build or deployment workflow.
 
-```bash
-yarn add nextjs-indexing-pack
-```
+## Preparing IndexNow
 
-or with pnpm:
+1. Generate an IndexNow key (any random 8–128 character string).
+2. Create a text file named `<key>.txt` in the public root of your site that contains the key value.
+3. Deploy the file so it is accessible at `https://your-domain.com/<key>.txt`.
 
-```bash
-pnpm add nextjs-indexing-pack
-```
+Refer to the official [IndexNow documentation](https://www.indexnow.org/documentation) for detailed requirements.
 
 ## Usage
 
-### Basic Example (Next.js App Router)
+Create a small script (for example in `scripts/submit-indexnow.ts`) and run it after `next build` finishes.
 
-```tsx
-import { generateIndexingMetadata } from 'nextjs-indexing-pack';
+```ts
+import { submitToIndexNow } from 'nextjs-indexing-pack';
 
-// In your page.tsx or layout.tsx
-export const metadata = generateIndexingMetadata({
-  title: 'My Awesome Page',
-  description: 'This is a description of my awesome page for search engines',
-  keywords: ['nextjs', 'seo', 'indexing', 'react'],
-  canonicalUrl: 'https://example.com/my-page',
+async function main() {
+  const result = await submitToIndexNow({
+    baseUrl: 'https://your-domain.com',
+    key: process.env.INDEXNOW_KEY!,
+    nextBuildDir: '.next',
+  });
+
+  console.log(`Submitted ${result.urls.length} URLs to IndexNow.`);
+  console.log(result.responses);
+}
+
+main().catch((error) => {
+  console.error('IndexNow submission failed:', error);
+  process.exit(1);
 });
+```
 
-export default function Page() {
-  return <div>Your page content</div>;
+Add a script entry so you can call it easily:
+
+```json
+{
+  "scripts": {
+    "build": "next build",
+    "postbuild": "tsx scripts/submit-indexnow.ts"
+  }
 }
 ```
 
-### Preventing Indexing
+> 💡 Prefer to test first? Pass `dryRun: true` to only list the URLs without notifying any endpoint.
 
-```tsx
-import { generateIndexingMetadata } from 'nextjs-indexing-pack';
+### Customising submissions
 
-export const metadata = generateIndexingMetadata({
-  title: 'Admin Dashboard',
-  description: 'Private admin area',
-  noIndex: true,
-  noFollow: true,
+```ts
+import { submitToIndexNow } from 'nextjs-indexing-pack';
+
+await submitToIndexNow({
+  baseUrl: 'https://your-domain.com',
+  key: process.env.INDEXNOW_KEY!,
+  nextBuildDir: '.next',
+  endpoints: ['https://www.bing.com/indexnow'], // override the default list
+  urlFilter: (url) => !url.includes('/drafts'),   // exclude URLs you do not want to submit
 });
 ```
 
-### Using Robots Tag Helper
+## API
 
-```tsx
-import { generateRobotsTag } from 'nextjs-indexing-pack';
+### `submitToIndexNow(options)`
 
-const robotsValue = generateRobotsTag(false, false); // "index, follow"
-const noIndexValue = generateRobotsTag(true, true);  // "noindex, nofollow"
+Collects URLs from the Next.js build directory and notifies IndexNow-compatible endpoints.
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `baseUrl` | `string` | Fully qualified origin to prepend to each discovered route. |
+| `nextBuildDir` | `string` | Location of the `.next` build directory (defaults to `.next`). |
+| `key` | `string` | IndexNow key value. |
+| `keyLocation` | `string` | Absolute URL pointing to the key file (defaults to `${baseUrl}/${key}.txt`). |
+| `endpoints` | `string[]` | Endpoints to notify (defaults to IndexNow, Bing, Yandex, Naver). |
+| `urlFilter` | `(url: string) => boolean` | Optional filter callback for excluding URLs from submission. |
+| `dryRun` | `boolean` | When `true`, URLs are collected but **not** submitted. |
+
+Returns a promise resolving to:
+
+```ts
+{
+  urls: string[]; // URLs that were collected from the Next.js build output
+  responses: Record<string, { status: number; ok: boolean; body?: string }>;
+}
 ```
 
-## API Reference
+### `collectIndexableRoutes(nextBuildDir?)`
 
-### `generateIndexingMetadata(options: IndexingOptions)`
-
-Generates metadata object for Next.js pages.
-
-#### Parameters
-
-- `options.title` (string, optional): Page title for search engines
-- `options.description` (string, optional): Meta description
-- `options.keywords` (string[], optional): Array of keywords
-- `options.canonicalUrl` (string, optional): Canonical URL for the page
-- `options.noIndex` (boolean, optional): Prevent search engine indexing (default: false)
-- `options.noFollow` (boolean, optional): Prevent following links (default: false)
-
-#### Returns
-
-Object containing Next.js metadata properties.
-
-### `generateRobotsTag(noIndex?: boolean, noFollow?: boolean)`
-
-Generates a robots meta tag value.
-
-#### Parameters
-
-- `noIndex` (boolean, optional): Whether to prevent indexing (default: false)
-- `noFollow` (boolean, optional): Whether to prevent following links (default: false)
-
-#### Returns
-
-String value for robots meta tag.
-
-## Development
-
-### Building the Package
-
-```bash
-npm run build
-```
-
-This will compile TypeScript files and generate type definitions in the `dist` folder.
-
-### Project Structure
-
-```
-nextjs-indexing-pack/
-├── src/
-│   ├── index.ts          # Main entry point
-│   └── indexing.ts       # Core indexing utilities
-├── dist/                 # Compiled JavaScript and type definitions
-├── package.json
-├── tsconfig.json
-├── LICENSE
-└── README.md
-```
+Utility helper that returns the raw list of routes (without base URL) discovered in the specified `.next` directory. This can be used if you want to roll your own submission logic.
 
 ## Requirements
 
-- Next.js >= 12.0.0
-- React >= 17.0.0
-- Node.js >= 16.0.0
+- Next.js ≥ 12
+- Node.js ≥ 18 (IndexNow submission relies on the built-in `fetch` API)
 
 ## License
 
 MIT © nextjs-indexing-pack
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Issues
-
-If you encounter any issues or have questions, please file an issue on the [GitHub repository](https://github.com/theafolayan/nextjs-indexing-pack/issues).

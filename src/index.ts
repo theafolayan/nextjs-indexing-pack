@@ -1,8 +1,10 @@
 /**
  * nextjs-indexing-pack
- * 
- * A utility package for managing SEO and indexing in Next.js applications.
+ *
+ * Utility helpers for collecting Next.js routes and submitting them to IndexNow-compatible search engines.
  */
-
-export { generateIndexingMetadata, generateRobotsTag } from './indexing';
-export type { IndexingOptions } from './indexing';
+export type {
+  SubmitToIndexNowOptions,
+  SubmitToIndexNowResult,
+} from './indexnow';
+export { collectIndexableRoutes, submitToIndexNow } from './indexnow';
