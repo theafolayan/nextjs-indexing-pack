@@ -123,40 +123,63 @@ export async function runInit(): Promise<void> {
     const key = generateIndexNowKey();
     const keyFilePath = await writeKeyFile(publicDir, key);
 
-    const googleServiceAccountPath = path.join(process.cwd(), 'google-service-account.json');
-    const googleServiceAccountStatus = await createDummyGoogleServiceAccount(googleServiceAccountPath);
+    const shouldConfigureGoogle = await confirm(
+      rl,
+      'Would you like to configure Google Indexing API integration now?',
+      false,
+    );
 
-    const relativeGooglePath = path.relative(process.cwd(), googleServiceAccountPath);
-    const normalizedGooglePath = relativeGooglePath
-      ? relativeGooglePath.startsWith('.')
-        ? relativeGooglePath
-        : `./${relativeGooglePath}`
-      : `./${path.basename(googleServiceAccountPath)}`;
+    let googleServiceAccountStatus: 'created' | 'skipped' | 'not-configured' = 'not-configured';
+    let normalizedGooglePath: string | undefined;
 
-    const configStatus = await saveConfig({ baseUrl, googleServiceAccountPath: normalizedGooglePath });
+    if (shouldConfigureGoogle) {
+      const googleServiceAccountPath = path.join(process.cwd(), 'google-service-account.json');
+      googleServiceAccountStatus = await createDummyGoogleServiceAccount(googleServiceAccountPath);
+
+      const relativeGooglePath = path.relative(process.cwd(), googleServiceAccountPath);
+      normalizedGooglePath = relativeGooglePath
+        ? relativeGooglePath.startsWith('.')
+          ? relativeGooglePath
+          : `./${relativeGooglePath}`
+        : `./${path.basename(googleServiceAccountPath)}`;
+    }
+
+    const configStatus = await saveConfig(
+      normalizedGooglePath ? { baseUrl, googleServiceAccountPath: normalizedGooglePath } : { baseUrl },
+    );
 
     const shouldUpdateEnv = await confirm(rl, 'Would you like to store the key in .env.local?', true);
     let envStatuses: Record<string, 'created' | 'updated' | 'skipped'> | 'declined' = 'declined';
     if (shouldUpdateEnv) {
-      envStatuses = {
+      const updates: Record<string, 'created' | 'updated' | 'skipped'> = {
         INDEXNOW_KEY: await appendEnvLocalEntry('INDEXNOW_KEY', key),
-        GOOGLE_APPLICATION_CREDENTIALS: await appendEnvLocalEntry('GOOGLE_APPLICATION_CREDENTIALS', normalizedGooglePath),
       };
+      if (normalizedGooglePath) {
+        updates.GOOGLE_APPLICATION_CREDENTIALS = await appendEnvLocalEntry(
+          'GOOGLE_APPLICATION_CREDENTIALS',
+          normalizedGooglePath,
+        );
+      }
+      envStatuses = updates;
     }
 
     console.log('\n✅ All set!');
     console.log(`• Base URL: ${baseUrl}`);
     console.log(`• Generated IndexNow key: ${key}`);
     console.log(`• Key file created at: ${keyFilePath}`);
-    if (googleServiceAccountStatus === 'created') {
-      console.log(`• Created dummy Google service account credentials at: ${googleServiceAccountPath}`);
+    if (googleServiceAccountStatus === 'created' && normalizedGooglePath) {
+      console.log(`• Created dummy Google service account credentials at: ${normalizedGooglePath}`);
+    } else if (googleServiceAccountStatus === 'skipped' && normalizedGooglePath) {
+      console.log(`• Re-used existing Google service account credentials at: ${normalizedGooglePath}`);
     } else {
-      console.log(`• Re-used existing Google service account credentials at: ${googleServiceAccountPath}`);
+      console.log('• Skipped Google Indexing configuration for now.');
     }
     if (configStatus === 'created') {
       console.log(`• Created ${CONFIG_FILENAME} with your base URL.`);
-    } else {
+    } else if (normalizedGooglePath) {
       console.log(`• Updated ${CONFIG_FILENAME} with your base URL and Google credentials path.`);
+    } else {
+      console.log(`• Updated ${CONFIG_FILENAME} with your base URL.`);
     }
     if (shouldUpdateEnv) {
       const indexNowStatus = (envStatuses as Record<string, 'created' | 'updated' | 'skipped'>).INDEXNOW_KEY;
@@ -168,25 +191,53 @@ export async function runInit(): Promise<void> {
         console.log('• .env.local already contained INDEXNOW_KEY – no changes made.');
       }
 
-      const googleStatus = (envStatuses as Record<string, 'created' | 'updated' | 'skipped'>).GOOGLE_APPLICATION_CREDENTIALS;
-      if (googleStatus === 'created') {
-        console.log('• Added GOOGLE_APPLICATION_CREDENTIALS to .env.local.');
-      } else if (googleStatus === 'updated') {
-        console.log('• Updated GOOGLE_APPLICATION_CREDENTIALS in .env.local.');
-      } else {
-        console.log('• .env.local already contained GOOGLE_APPLICATION_CREDENTIALS – no changes made.');
+      if (normalizedGooglePath) {
+        const googleStatus = (envStatuses as Record<string, 'created' | 'updated' | 'skipped'>)
+          .GOOGLE_APPLICATION_CREDENTIALS;
+        if (googleStatus === 'created') {
+          console.log('• Added GOOGLE_APPLICATION_CREDENTIALS to .env.local.');
+        } else if (googleStatus === 'updated') {
+          console.log('• Updated GOOGLE_APPLICATION_CREDENTIALS in .env.local.');
+        } else if (googleStatus === 'skipped') {
+          console.log('• .env.local already contained GOOGLE_APPLICATION_CREDENTIALS – no changes made.');
+        }
       }
     } else {
       console.log('• Skipped updating .env.local.');
     }
 
     console.log('\nNext steps:');
-    console.log(`1. Ensure ".env.local" (or your secrets store) exposes INDEXNOW_KEY=${key} to your CI/deployment environment.`);
-    console.log(`2. Ensure ".env.local" (or your secrets store) exposes GOOGLE_APPLICATION_CREDENTIALS=${normalizedGooglePath}.`);
-    console.log('3. After "next build", run: npx nextjs-indexing-pack');
-    console.log('   (The CLI reads INDEXNOW_KEY and Google credentials from your environment and your base URL from the config file).');
-    console.log(`4. Deploy ${path.relative(process.cwd(), keyFilePath) || `${key}.txt`} so it is publicly accessible at ${baseUrl}/${key}.txt.`);
-    console.log('5. Replace the dummy Google service account file with real credentials that have access to the Indexing API.');
+    let step = 1;
+    console.log(
+      `${step}. Ensure ".env.local" (or your secrets store) exposes INDEXNOW_KEY=${key} to your CI/deployment environment.`,
+    );
+    step += 1;
+    if (normalizedGooglePath) {
+      console.log(
+        `${step}. Ensure ".env.local" (or your secrets store) exposes GOOGLE_APPLICATION_CREDENTIALS=${normalizedGooglePath}.`,
+      );
+      step += 1;
+    }
+    console.log(`${step}. After "next build", run: npx nextjs-indexing-pack`);
+    if (normalizedGooglePath) {
+      console.log(
+        '   (The CLI reads INDEXNOW_KEY and Google credentials from your environment and your base URL from the config file).',
+      );
+    } else {
+      console.log('   (The CLI reads INDEXNOW_KEY from your environment and your base URL from the config file).');
+    }
+    step += 1;
+    console.log(
+      `${step}. Deploy ${path.relative(process.cwd(), keyFilePath) || `${key}.txt`} so it is publicly accessible at ${baseUrl}/${key}.txt.`,
+    );
+    step += 1;
+    if (normalizedGooglePath) {
+      console.log(`${step}. Replace the dummy Google service account file with real credentials that have access to the Indexing API.`);
+    } else {
+      console.log(
+        `${step}. When you are ready to use the Google Indexing API, re-run this wizard or update the config with real credentials.`,
+      );
+    }
   } finally {
     rl.close();
   }

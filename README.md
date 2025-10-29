@@ -35,7 +35,7 @@ Kick off your integration with the interactive init wizard:
 npx nextjs-indexing-pack init
 ```
 
-The wizard asks for your production URL, generates a compliant IndexNow key, creates the required `public/<key>.txt` file, writes `nextjs-indexing-pack.config.json`, scaffolds a dummy Google service account JSON credential file, and (optionally) stores the credentials in `.env.local`.
+The wizard asks for your production URL, generates a compliant IndexNow key, creates the required `public/<key>.txt` file, writes `nextjs-indexing-pack.config.json`, and can optionally scaffold a dummy Google service account JSON credential file while storing the references in `.env.local`.
 
 Once you are set up, trigger submissions directly from your build or deployment pipeline:
 
@@ -53,7 +53,7 @@ Optional flags:
 
 If you do not pass `--key`, the CLI will automatically fall back to the `INDEXNOW_KEY` environment variable.
 
-If `GOOGLE_APPLICATION_CREDENTIALS` (or `nextjs-indexing-pack.config.json`) points to a service account JSON file, the CLI will automatically notify the Google Indexing API as well.
+If `GOOGLE_APPLICATION_CREDENTIALS` (or `nextjs-indexing-pack.config.json`) points to a service account JSON file, the CLI will automatically notify the Google Indexing API as well. When the credentials are missing required fields or contain placeholder values, the CLI skips the Google submission and continues with IndexNow so your default workflow is not interrupted.
 
 For example, run a dry run to inspect the URLs that will be submitted:
 

@@ -118,29 +118,33 @@ async function main(): Promise<void> {
     }
 
     if (googleServiceAccount) {
-      const googleResult = await submitToGoogleIndexing({
-        baseUrl,
-        serviceAccountPath: googleServiceAccount,
-        nextBuildDir,
-        dryRun,
-        notificationType: googleNotificationType,
-      });
+      try {
+        const googleResult = await submitToGoogleIndexing({
+          baseUrl,
+          serviceAccountPath: googleServiceAccount,
+          nextBuildDir,
+          dryRun,
+          notificationType: googleNotificationType,
+        });
 
-      if (dryRun) {
-        console.log(
-          `Google Indexing dry run: discovered ${googleResult.urls.length} URL${googleResult.urls.length === 1 ? '' : 's'}.`,
-        );
-      } else {
-        console.log(
-          `Submitted ${googleResult.urls.length} URL${googleResult.urls.length === 1 ? '' : 's'} to the Google Indexing API.`,
-        );
-        for (const response of googleResult.responses) {
+        if (dryRun) {
           console.log(
-            `- ${response.url}: ${response.ok ? 'ok' : 'failed'} (status ${response.status}${
-              response.body ? `, body: ${response.body}` : ''
-            })`,
+            `Google Indexing dry run: discovered ${googleResult.urls.length} URL${googleResult.urls.length === 1 ? '' : 's'}.`,
           );
+        } else {
+          console.log(
+            `Submitted ${googleResult.urls.length} URL${googleResult.urls.length === 1 ? '' : 's'} to the Google Indexing API.`,
+          );
+          for (const response of googleResult.responses) {
+            console.log(
+              `- ${response.url}: ${response.ok ? 'ok' : 'failed'} (status ${response.status}${
+                response.body ? `, body: ${response.body}` : ''
+              })`,
+            );
+          }
         }
+      } catch (error: any) {
+        console.warn(`Skipped Google Indexing submission (${error?.message ?? error}).`);
       }
     } else {
       console.log('Skipped Google Indexing submission (no service account credentials configured).');
