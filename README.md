@@ -1,12 +1,12 @@
-# nextjs-indexing-pack
+# Nextjs Indexing Pack
 
-Submit every non-error route in your Next.js build to [IndexNow](https://www.indexnow.org/) and the search engines that support it.
+Submit every valid route in your Next.js build to [IndexNow](https://www.indexnow.org/) and the search engines that support it.
 
 ## Why nextjs-indexing-pack
 
 Don't rely on Google and other search engines randomly stumbling upon your latest product launch, seasonal landing page, or blog update. nextjs-indexing-pack gives you proactive control over how quickly fresh URLs reach the crawlers, so you can turn marketing campaigns, news announcements, or inventory updates into real traffic while they are still timely.
 
-Inspired by the proven results of the [Rank Math Instant Indexing](https://rankmath.com/blog/google-indexing-api/) approach, this package tailors that playbook for modern Next.js stacks. Business owners get a single, reliable workflow that respects their CI/CD process, pairs perfectly with the framework's build output, and keeps their brand visible across IndexNow partners and the Google Indexing API without waiting for chance discovery.
+Inspired by the proven results of the [Rank Math Instant Indexing](https://rankmath.com/blog/google-indexing-api/) approach, this package tailors that playbook for modern Next.js stacks. You get a single, reliable workflow that respects your CI/CD process, pairs perfectly with the framework's build output, and keeps your website visible across IndexNow partners and the Google Indexing API without waiting for chance discovery.
 
 ## Table of contents
 
@@ -26,9 +26,9 @@ Inspired by the proven results of the [Rank Math Instant Indexing](https://rankm
 
 ## What it does
 
-- 📄 Reads your Next.js build output and compiles a clean list of public URLs (excluding 404/error utilities).
+- 📄 Reads your Next.js website build output and compiles a clean list of public URLs (excluding 404/error utilities).
 - 🚀 Sends the URLs to IndexNow-compatible endpoints (IndexNow, Bing, Yandex, Naver) with one call.
-- 🌐 Optionally publishes the same URLs to the [Google Indexing API](https://developers.google.com/search/apis/indexing-api/v3/quickstart) using a service account.
+- 🌐 Publishes (if configured) the same URLs to the [Google Indexing API](https://developers.google.com/search/apis/indexing-api/v3/quickstart) using a service account.
 - 🧪 Supports dry-run mode so you can verify which URLs will be submitted before notifying search engines.
 
 ## Quick start
