@@ -34,6 +34,10 @@ export interface SubmitToGoogleIndexingOptions {
    * Notification type sent to the Indexing API. Defaults to `URL_UPDATED`.
    */
   notificationType?: GoogleNotificationType;
+  /**
+   * Optional explicit list of URLs to submit instead of discovering them from the Next.js build output.
+   */
+  urls?: string[];
 }
 
 export interface SubmitToGoogleIndexingResult {
@@ -154,7 +158,15 @@ async function createAccessToken(serviceAccount: ServiceAccount): Promise<string
 export async function submitToGoogleIndexing(
   options: SubmitToGoogleIndexingOptions,
 ): Promise<SubmitToGoogleIndexingResult> {
-  const { baseUrl, serviceAccountPath, nextBuildDir = '.next', urlFilter, dryRun, notificationType = 'URL_UPDATED' } = options;
+  const {
+    baseUrl,
+    serviceAccountPath,
+    nextBuildDir = '.next',
+    urlFilter,
+    dryRun,
+    notificationType = 'URL_UPDATED',
+    urls: explicitUrls,
+  } = options;
 
   if (!baseUrl) {
     throw new Error('`baseUrl` must be provided.');
@@ -165,10 +177,34 @@ export async function submitToGoogleIndexing(
 
   const normalizedBase = normalizeBaseUrl(baseUrl);
 
-  const routes = await collectIndexableRoutes(nextBuildDir);
-  const urls = routes
-    .map((route) => (route === '/' ? normalizedBase : `${normalizedBase}${route}`))
-    .filter((routeUrl) => (urlFilter ? urlFilter(routeUrl) : true));
+  let urls: string[];
+  if (explicitUrls?.length) {
+    const seen = new Set<string>();
+    urls = [];
+    for (const urlToSubmit of explicitUrls) {
+      if (!urlToSubmit) continue;
+      let parsed: URL;
+      try {
+        parsed = new URL(urlToSubmit);
+      } catch {
+        throw new Error(`Invalid URL provided to submitToGoogleIndexing: ${urlToSubmit}`);
+      }
+      const normalizedUrl = parsed.toString();
+      if (urlFilter && !urlFilter(normalizedUrl)) {
+        continue;
+      }
+      if (seen.has(normalizedUrl)) {
+        continue;
+      }
+      seen.add(normalizedUrl);
+      urls.push(normalizedUrl);
+    }
+  } else {
+    const routes = await collectIndexableRoutes(nextBuildDir);
+    urls = routes
+      .map((route) => (route === '/' ? normalizedBase : `${normalizedBase}${route}`))
+      .filter((routeUrl) => (urlFilter ? urlFilter(routeUrl) : true));
+  }
 
   const result: SubmitToGoogleIndexingResult = {
     urls,
