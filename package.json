@@ -1,7 +1,7 @@
 {
   "name": "nextjs-indexing-pack",
   "version": "0.1.0",
-  "description": "Indexing package for NextJS Framework",
+  "description": "Submit Next.js URLs to IndexNow-compatible search engines",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -11,9 +11,11 @@
   },
   "keywords": [
     "nextjs",
-    "indexing",
+    "indexnow",
     "seo",
-    "react"
+    "search",
+    "bing",
+    "yandex"
   ],
   "author": "",
   "license": "MIT",
