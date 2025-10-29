@@ -8,3 +8,5 @@ export type {
   SubmitToIndexNowResult,
 } from './indexnow';
 export { collectIndexableRoutes, submitToIndexNow } from './indexnow';
+export type { SubmitToGoogleIndexingOptions, SubmitToGoogleIndexingResult } from './google-indexing';
+export { submitToGoogleIndexing } from './google-indexing';

@@ -6,6 +6,7 @@ Submit every non-error route in your Next.js build to [IndexNow](https://www.ind
 
 - 📄 Reads your Next.js build output and compiles a clean list of public URLs (excluding 404/error utilities).
 - 🚀 Sends the URLs to IndexNow-compatible endpoints (IndexNow, Bing, Yandex, Naver) with one call.
+- 🌐 Optionally publishes the same URLs to the [Google Indexing API](https://developers.google.com/search/apis/indexing-api/v3/quickstart) using a service account.
 - 🧪 Supports dry-run mode so you can verify which URLs will be submitted before notifying search engines.
 
 ## Installation
@@ -34,7 +35,7 @@ Kick off your integration with the interactive init wizard:
 npx nextjs-indexing-pack init
 ```
 
-The wizard asks for your production URL, generates a compliant IndexNow key, creates the required `public/<key>.txt` file, writes `nextjs-indexing-pack.config.json`, and (optionally) stores the key in `.env.local`.
+The wizard asks for your production URL, generates a compliant IndexNow key, creates the required `public/<key>.txt` file, writes `nextjs-indexing-pack.config.json`, scaffolds a dummy Google service account JSON credential file, and (optionally) stores the credentials in `.env.local`.
 
 Once you are set up, trigger submissions directly from your build or deployment pipeline:
 
@@ -47,8 +48,12 @@ Optional flags:
 - `--base-url <url>` – override the base URL stored in `nextjs-indexing-pack.config.json`.
 - `--next-build-dir <dir>` – override the location of your Next.js build output (defaults to `.next`).
 - `--dry-run` – collect URLs without notifying any endpoints.
+- `--google-service-account <path>` – override the Google service account credentials path (defaults to `GOOGLE_APPLICATION_CREDENTIALS` env var or the config file).
+- `--google-notification-type <type>` – switch between `URL_UPDATED` (default) and `URL_DELETED` notifications for the Google Indexing API.
 
 If you do not pass `--key`, the CLI will automatically fall back to the `INDEXNOW_KEY` environment variable.
+
+If `GOOGLE_APPLICATION_CREDENTIALS` (or `nextjs-indexing-pack.config.json`) points to a service account JSON file, the CLI will automatically notify the Google Indexing API as well.
 
 For example, run a dry run to inspect the URLs that will be submitted:
 
@@ -63,7 +68,7 @@ Tip: wire it into your pipeline after `next build` finishes, for example `"postb
 Prefer to keep using the library? Create a small script (for example in `scripts/submit-indexnow.ts`) and run it after `next build` finishes.
 
 ```ts
-import { submitToIndexNow } from 'nextjs-indexing-pack';
+import { submitToGoogleIndexing, submitToIndexNow } from 'nextjs-indexing-pack';
 
 async function main() {
   const result = await submitToIndexNow({
@@ -74,6 +79,16 @@ async function main() {
 
   console.log(`Submitted ${result.urls.length} URLs to IndexNow.`);
   console.log(result.responses);
+
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    const googleResult = await submitToGoogleIndexing({
+      baseUrl: 'https://your-domain.com',
+      serviceAccountPath: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+      nextBuildDir: '.next',
+    });
+    console.log(`Submitted ${googleResult.urls.length} URLs to the Google Indexing API.`);
+    console.log(googleResult.responses);
+  }
 }
 
 main().catch((error) => {
@@ -137,6 +152,28 @@ Returns a promise resolving to:
 ### `collectIndexableRoutes(nextBuildDir?)`
 
 Utility helper that returns the raw list of routes (without base URL) discovered in the specified `.next` directory. This can be used if you want to roll your own submission logic.
+
+### `submitToGoogleIndexing(options)`
+
+Publishes URLs to the Google Indexing API using a service account.
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `baseUrl` | `string` | Fully qualified origin to prepend to each discovered route. |
+| `serviceAccountPath` | `string` | Path to the Google service account JSON credentials. |
+| `nextBuildDir` | `string` | Location of the `.next` build directory (defaults to `.next`). |
+| `urlFilter` | `(url: string) => boolean` | Optional filter callback for excluding URLs from submission. |
+| `dryRun` | `boolean` | When `true`, URLs are collected but **not** submitted. |
+| `notificationType` | `'URL_UPDATED' \| 'URL_DELETED'` | Notification type sent to the Indexing API (defaults to `URL_UPDATED`). |
+
+Returns a promise resolving to:
+
+```ts
+{
+  urls: string[]; // URLs that were collected from the Next.js build output
+  responses: Array<{ url: string; status: number; ok: boolean; body?: string }>;
+}
+```
 
 ## Requirements
 
